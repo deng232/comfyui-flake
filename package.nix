@@ -240,9 +240,15 @@ py.buildPythonApplication.override
       cp -R . "$appdir"
       chmod -R u+w "$appdir"
 
+      wrappedPythonPath="$appdir:${py.makePythonPath pythonPath}"
+
       makeWrapper ${py.python.interpreter} "$out/bin/comfyui" \
         --add-flags "$appdir/main.py" \
-        --set PYTHONPATH "$appdir:${py.makePythonPath pythonPath}" \
+        --set PYTHONPATH "$wrappedPythonPath" \
+        --prefix LD_LIBRARY_PATH : "/run/opengl-driver/lib"
+
+      makeWrapper ${py.python.interpreter} "$out/bin/python" \
+        --set PYTHONPATH "$wrappedPythonPath" \
         --prefix LD_LIBRARY_PATH : "/run/opengl-driver/lib"
 
       runHook postInstall

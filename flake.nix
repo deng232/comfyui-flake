@@ -11,10 +11,16 @@
     ];
   };
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    comfyui-src = {
+      url = "git+file:///home/deng/comfy/ComfyUI";
+      flake = false;
+    };
+  };
 
   outputs =
-    { nixpkgs, ... }:
+    { nixpkgs, comfyui-src, ... }:
     let
       system = "x86_64-linux";
 
@@ -30,7 +36,7 @@
         };
       };
 
-      comfyui = pkgs.callPackage ./package.nix { };
+      comfyui = pkgs.callPackage ./package.nix { inherit comfyui-src; };
     in
     {
       packages.${system} = {

@@ -3,6 +3,7 @@
   fetchPypi,
   makeWrapper,
   python3Packages,
+  comfyui-src,
 }:
 
 let
@@ -218,7 +219,7 @@ py.buildPythonApplication.override
 
     pyproject = false;
 
-    src = ./ComfyUI;
+    src = comfyui-src;
 
     nativeBuildInputs = [
       makeWrapper

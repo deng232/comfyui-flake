@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "comfyui-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1781488042,
+        "narHash": "sha256-TSo7ZyZGih7G3OW0P7tEjStU3uZlhja1e1F50/YAScc=",
+        "ref": "refs/heads/master",
+        "rev": "4388eb781ab35c612c14d86d346b4663640c30e6",
+        "revCount": 5442,
+        "type": "git",
+        "url": "file:///home/deng/comfy/ComfyUI"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:///home/deng/comfy/ComfyUI"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1781074563,
@@ -18,6 +34,7 @@
     },
     "root": {
       "inputs": {
+        "comfyui-src": "comfyui-src",
         "nixpkgs": "nixpkgs"
       }
     }

@@ -15,6 +15,11 @@ let
       hash,
       dependencies ? [ ],
       pythonImportsCheck ? [ ],
+      format ? "wheel",
+      dist ? "py3",
+      python ? "py3",
+      abi ? "none",
+      platform ? "any",
     }:
     py.buildPythonPackage {
       inherit
@@ -22,17 +27,20 @@ let
         version
         dependencies
         pythonImportsCheck
+        format
         ;
 
-      format = "wheel";
-
       src = fetchPypi {
-        inherit pname version hash;
-        format = "wheel";
-        dist = "py3";
-        python = "py3";
-        abi = "none";
-        platform = "any";
+        inherit
+          pname
+          version
+          hash
+          format
+          dist
+          python
+          abi
+          platform
+          ;
       };
 
       doCheck = false;
@@ -97,13 +105,21 @@ let
   comfy-kitchen = py3Wheel {
     pname = "comfy_kitchen";
     version = "0.2.10";
-    hash = "sha256-wkKv0Y0SDij8lJxCP6KMuyLLTXDWJ9jMfN9rrVTdJyw=";
+    hash = "sha256-VKZL9N3fBa1p9e73PXLKoyijMbeYpBmXVZpRWOYW2H8=";
+    dist = "cp312";
+    python = "cp312";
+    abi = "abi3";
+    platform = "manylinux_2_24_x86_64.manylinux_2_28_x86_64";
   };
 
   comfy-aimdo = py3Wheel {
     pname = "comfy_aimdo";
     version = "0.4.9";
-    hash = "sha256-qCF8CXnW5AJU/civJnCxjZxOmfPFRp7wmv8UbDaD7y8=";
+    hash = "sha256-sDTD8L0JSCN8rBzGmToM0PJIIpdv1o7+OY39T5Xh6ow=";
+    dist = "cp39";
+    python = "cp39";
+    abi = "abi3";
+    platform = "manylinux2010_x86_64.manylinux2014_x86_64.manylinux_2_12_x86_64.manylinux_2_17_x86_64";
   };
 
   trampoline = py3Wheel {

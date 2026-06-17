@@ -1,8 +1,10 @@
 {
+  bash,
+  coreutils,
   lib,
   fetchPypi,
-  makeWrapper,
   python3Packages,
+  util-linux,
   comfyui-src,
 }:
 
@@ -221,10 +223,6 @@ py.buildPythonApplication.override
 
     src = comfyui-src;
 
-    nativeBuildInputs = [
-      makeWrapper
-    ];
-
     dependencies = pythonPath;
 
     dontBuild = true;
@@ -240,16 +238,116 @@ py.buildPythonApplication.override
       cp -R . "$appdir"
       chmod -R u+w "$appdir"
 
-      wrappedPythonPath="$appdir:${py.makePythonPath pythonPath}"
+      mkdir -p "$out/libexec"
 
-      makeWrapper ${py.python.interpreter} "$out/bin/comfyui" \
-        --add-flags "$appdir/main.py" \
-        --set PYTHONPATH "$wrappedPythonPath" \
-        --prefix LD_LIBRARY_PATH : "/run/opengl-driver/lib"
+      cat > "$out/libexec/comfyui-overlay-run" <<'EOF'
+      #!${bash}/bin/bash
+      set -euo pipefail
 
-      makeWrapper ${py.python.interpreter} "$out/bin/python" \
-        --set PYTHONPATH "$wrappedPythonPath" \
-        --prefix LD_LIBRARY_PATH : "/run/opengl-driver/lib"
+      mode="$1"
+      shift
+
+      appdir="@appdir@"
+
+      # Persist ComfyUI's mutable project tree outside the immutable Nix output.
+      if [ -z "''${COMFYUI_HOME:-}" ] && [ -z "''${XDG_DATA_HOME:-}" ] && [ -z "''${HOME:-}" ]; then
+        echo "comfyui: set COMFYUI_HOME or HOME so overlay data has a writable location" >&2
+        exit 1
+      fi
+
+      state_home="''${COMFYUI_HOME:-''${XDG_DATA_HOME:-$HOME/.local/share}/comfyui}"
+      overlay_home="''${COMFYUI_OVERLAY_HOME:-$state_home/overlay}"
+      upperdir="$overlay_home/upper"
+      workdir="$overlay_home/work"
+      merged="$overlay_home/root"
+
+      ${coreutils}/bin/mkdir -p "$upperdir" "$workdir" "$merged"
+
+      # An overlay upper/work pair cannot be safely shared by concurrent mounts.
+      exec 9>"$overlay_home/lock"
+      if ! ${util-linux}/bin/flock -n 9; then
+        echo "comfyui: overlay root is already in use: $overlay_home" >&2
+        exit 1
+      fi
+
+      # Seed writable upper directories for paths ComfyUI commonly mutates.
+      for dir in input output temp user models custom_nodes; do
+        ${coreutils}/bin/mkdir -p "$upperdir/$dir"
+        ${coreutils}/bin/chmod u+rwx "$upperdir/$dir"
+      done
+
+      # Present the immutable installed app as a writable project root.
+      if ! ${util-linux}/bin/mount -t overlay overlay \
+        -o "lowerdir=$appdir,upperdir=$upperdir,workdir=$workdir" \
+        "$merged"; then
+        echo "comfyui: failed to mount overlayfs project root" >&2
+        echo "comfyui: this requires unprivileged user namespaces and overlayfs mounts to be allowed" >&2
+        exit 1
+      fi
+
+      # Keep the private mount namespace tidy when the wrapped process exits.
+      cleanup() {
+        ${util-linux}/bin/umount "$merged" 2>/dev/null || true
+      }
+      trap cleanup EXIT
+
+      # Make imports resolve against the writable overlay before packaged deps.
+      export COMFYUI_PROJECT_ROOT="$merged"
+      export PYTHONPATH="$merged:${py.makePythonPath pythonPath}"
+      export LD_LIBRARY_PATH="/run/opengl-driver/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+      cd "$merged"
+
+      # Use the same overlay setup for both the app and the debug Python shell.
+      case "$mode" in
+        comfyui)
+          ${py.python.interpreter} "$merged/main.py" "$@"
+          ;;
+        python)
+          ${py.python.interpreter} "$@"
+          ;;
+        *)
+          echo "comfyui: unknown overlay mode: $mode" >&2
+          exit 2
+          ;;
+      esac
+      EOF
+      substituteInPlace "$out/libexec/comfyui-overlay-run" \
+        --replace-fail "@appdir@" "$appdir"
+
+      cat > "$out/bin/comfyui" <<'EOF'
+      #!${bash}/bin/bash
+      set -euo pipefail
+
+      # Give ComfyUI a private mount namespace where overlayfs can shadow $out.
+      exec ${util-linux}/bin/unshare \
+        --user \
+        --map-root-user \
+        --mount \
+        --propagation private \
+        --fork \
+        "@overlayRun@" comfyui "$@"
+      EOF
+      substituteInPlace "$out/bin/comfyui" \
+        --replace-fail "@overlayRun@" "$out/libexec/comfyui-overlay-run"
+
+      cat > "$out/bin/python" <<'EOF'
+      #!${bash}/bin/bash
+      set -euo pipefail
+
+      # Run debugging Python with the same writable project root as ComfyUI.
+      exec ${util-linux}/bin/unshare \
+        --user \
+        --map-root-user \
+        --mount \
+        --propagation private \
+        --fork \
+        "@overlayRun@" python "$@"
+      EOF
+      substituteInPlace "$out/bin/python" \
+        --replace-fail "@overlayRun@" "$out/libexec/comfyui-overlay-run"
+
+      chmod +x "$out/libexec/comfyui-overlay-run" "$out/bin/comfyui" "$out/bin/python"
 
       runHook postInstall
     '';

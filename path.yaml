@@ -1,3 +1,4 @@
 local_models:
-  base_path: /home/deng/comfy
-  checkpoints: models
+  base_path: /home/deng/comfy/models
+  checkpoints: checkpoints
+  loras: loras

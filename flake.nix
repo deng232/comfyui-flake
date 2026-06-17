@@ -36,7 +36,47 @@
         };
       };
 
-      comfyui = pkgs.callPackage ./package.nix { inherit comfyui-src; };
+      py = pkgs.python3Packages;
+
+      segmentAnything = py.buildPythonPackage rec {
+        pname = "segment-anything";
+        version = "1.0";
+        format = "wheel";
+
+        src = pkgs.fetchPypi {
+          pname = "segment_anything";
+          inherit version format;
+          dist = "py3";
+          python = "py3";
+          abi = "none";
+          platform = "any";
+          hash = "sha256-hvZ9QXqRWCPDMCCY7/6QCLaIlFdyUXMQlWu0neDn8C4=";
+        };
+
+        doCheck = false;
+      };
+
+      /*
+        comfyui = pkgs.callPackage ./package.nix {
+             inherit comfyui-src;
+             extra_deps =
+               (with py; [
+                 dill
+                 matplotlib
+                 numpy
+                 opencv-python-headless
+                 piexif
+                 sam2
+                 scikit-image
+                 scipy
+                 transformers
+                 ultralytics
+               ])
+               ++ [
+                 segmentAnything
+               ];
+           };
+      */
     in
     {
       packages.${system} = {

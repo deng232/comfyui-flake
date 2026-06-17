@@ -4,6 +4,7 @@
   makeWrapper,
   python3Packages,
   comfyui-src,
+  extra_deps ? [ ],
 }:
 
 let
@@ -206,7 +207,8 @@ let
       comfyui-embedded-docs
       comfy-kitchen
       comfy-aimdo
-    ];
+    ]
+    ++ extra_deps;
 in
 
 py.buildPythonApplication.override

@@ -1,0 +1,3 @@
+local_models:
+  base_path: /home/deng/comfy
+  checkpoints: models

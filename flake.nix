@@ -30,7 +30,7 @@
         config = {
           allowUnfree = true;
           cudaSupport = true;
-
+          permittedInsecurePackages = [ "cuda12.9-tensorrt-10.14.1.48" ];
           # Do not set cudaCapabilities while testing cache hits.
           # Custom capabilities change derivation hashes.
         };
@@ -90,19 +90,22 @@
 
             # Impact Subpack UltralyticsDetectorProvider support.
             dill
-            onnx
-            tensorrt
             ultralytics
 
             #benchmark custom_node
             pyyaml
             psutil
+
+            #tensorrt custom_node
+            onnx
+            tensorrt
           ])
           ++ [
             segmentAnything
           ];
 
         extra_runtime_libs = [
+          #tensorrt custom_node
           pkgs.cudaPackages.tensorrt
         ];
       };

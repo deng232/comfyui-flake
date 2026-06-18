@@ -77,6 +77,35 @@
                ];
            };
       */
+
+      comfyui = pkgs.callPackage ./package.nix {
+        inherit comfyui-src;
+        extra_deps =
+          (with py; [
+            # Impact Pack module-load checks and FaceDetailer/SAMLoader support.
+            opencv-python-headless
+            piexif
+            sam2
+            scikit-image
+
+            # Impact Subpack UltralyticsDetectorProvider support.
+            dill
+            onnx
+            tensorrt
+            ultralytics
+
+            #benchmark custom_node
+            pyyaml
+            psutil
+          ])
+          ++ [
+            segmentAnything
+          ];
+
+        extra_runtime_libs = [
+          pkgs.cudaPackages.tensorrt
+        ];
+      };
     in
     {
       packages.${system} = {

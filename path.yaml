@@ -2,3 +2,6 @@ local_models:
   base_path: /home/deng/comfy/models
   checkpoints: checkpoints
   loras: loras
+  sams: sams
+  ultralytics_bbox: ultralytics/bbox
+  ultralytics_segm: ultralytics/segm

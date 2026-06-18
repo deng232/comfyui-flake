@@ -5,6 +5,7 @@
   python3Packages,
   comfyui-src,
   extra_deps ? [ ],
+  extra_runtime_libs ? [ ],
 }:
 
 let
@@ -209,6 +210,8 @@ let
       comfy-aimdo
     ]
     ++ extra_deps;
+
+  runtimeLibraryPath = lib.makeLibraryPath extra_runtime_libs;
 in
 
 py.buildPythonApplication.override
@@ -247,11 +250,11 @@ py.buildPythonApplication.override
       makeWrapper ${py.python.interpreter} "$out/bin/comfyui" \
         --add-flags "$appdir/main.py" \
         --set PYTHONPATH "$wrappedPythonPath" \
-        --prefix LD_LIBRARY_PATH : "/run/opengl-driver/lib"
+        --prefix LD_LIBRARY_PATH : "/run/opengl-driver/lib:${runtimeLibraryPath}"
 
       makeWrapper ${py.python.interpreter} "$out/bin/python" \
         --set PYTHONPATH "$wrappedPythonPath" \
-        --prefix LD_LIBRARY_PATH : "/run/opengl-driver/lib"
+        --prefix LD_LIBRARY_PATH : "/run/opengl-driver/lib:${runtimeLibraryPath}"
 
       runHook postInstall
     '';

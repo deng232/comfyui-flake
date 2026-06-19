@@ -98,6 +98,7 @@
 
             #tensorrt custom_node
             onnx
+            onnxscript
             tensorrt
           ])
           ++ [
@@ -109,11 +110,36 @@
           pkgs.cudaPackages.tensorrt
         ];
       };
+
+      benchmarkVisualizer = pkgs.writeShellApplication {
+        name = "visualize-benchmark";
+        runtimeInputs = [
+          (pkgs.python3.withPackages (ps: [
+            ps.plotly
+            ps.kaleido
+          ]))
+        ];
+
+        # workdir/ is ignored by this flake, so keep this wrapper pointed at
+        # the live custom node checkout in the workspace.
+        text = ''
+          exec python /home/deng/comfy/workdir/custom_nodes/comfyui-benchmark/visualize_benchmark.py "$@"
+        '';
+      };
     in
     {
       packages.${system} = {
         inherit comfyui;
         default = comfyui;
       };
+
+      apps.${system} = {
+        visualize-benchmark = {
+          type = "app";
+          program = "${benchmarkVisualizer}/bin/visualize-benchmark";
+        };
+      };
+
+      #TODO: add an dev env shell
     };
 }

@@ -3,5 +3,8 @@ local_models:
   checkpoints: checkpoints
   loras: loras
   sams: sams
+  tensorrt: |
+    tensorrt
+    /home/deng/comfy/workdir/output/tensorrt
   ultralytics_bbox: ultralytics/bbox
   ultralytics_segm: ultralytics/segm
